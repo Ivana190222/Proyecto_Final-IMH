@@ -55,7 +55,7 @@ Para acceder al panel de administración:
 - **React Router**: Navegación entre páginas
 - **Bootstrap**: Framework CSS para el diseño responsive
 - **SweetAlert2**: Alertas y notificaciones bonitas
-- **Axios**: Cliente HTTP para realizar peticiones a la API
+- **Fetch**: Cliente HTTP para realizar peticiones a la API
 
 ## 📂 Estructura del proyecto
 
@@ -64,23 +64,3 @@ Para acceder al panel de administración:
 - **/src/contexto**: Administración del estado global (carrito, autenticación)
 - **/src/servicios**: Funciones para comunicarse con la API
 
-## 💡 Ayuda para principiantes
-
-### ¿Qué es React?
-React es una biblioteca de JavaScript para crear interfaces de usuario. Permite crear componentes reutilizables y gestionar el estado de la aplicación de forma eficiente.
-
-### ¿Qué es un componente?
-Un componente es una pieza de código que representa una parte de la interfaz de usuario. Por ejemplo, el Navbar, un botón personalizado o una tarjeta de producto.
-
-### ¿Qué es useState?
-Es un "hook" de React que permite a los componentes funcionales tener estado. Por ejemplo, para guardar los productos en el carrito.
-
-### ¿Qué es useEffect?
-Es otro "hook" que permite ejecutar código cuando el componente se monta, actualiza o desmonta. Se usa para cargar datos de una API, por ejemplo.
-
-## 🤝 ¿Necesitas ayuda?
-
-Si tienes dudas o problemas con el proyecto:
-1. Revisa la documentación de React: [React Docs](https://react.dev)
-2. Busca en Stack Overflow
-3. ¡Pregúntame! Estoy aquí para ayudarte
