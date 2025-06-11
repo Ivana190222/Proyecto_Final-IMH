@@ -85,83 +85,153 @@ const Carrito = () => {
   return (
     <div>
       <h2 className="mb-4">Tu Carrito</h2>
-      <div className="table-responsive">
-        <table className="table align-middle">
-          <thead>
-            <tr>
-              <th scope="col">Producto</th>
-              <th scope="col">Precio</th>
-              <th scope="col">Cantidad</th>
-              <th scope="col">Subtotal</th>
-              <th scope="col">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {carrito.map(item => (
-              <tr key={item.id}>
-                <td>
-                  <div className="d-flex align-items-center">
-                    <img 
-                      src={item.imagen} 
-                      alt={item.nombre} 
-                      style={{ width: '60px', height: '60px', objectFit: 'contain' }}
-                      className="me-3"
-                    />
-                    <div>
-                      <h6 className="mb-0">{item.nombre}</h6>
-                      <small className="text-muted">{item.marca}</small>
-                    </div>
-                  </div>
-                </td>
-                <td>${item.precio.toLocaleString()}</td>
-                <td style={{ width: '150px' }}>
-                  <div className="input-group">
-                    <button 
-                      className="btn btn-outline-secondary" 
-                      type="button"
-                      onClick={() => handleCantidadChange(item.id, item.cantidad - 1)}
-                    >
-                      <i className="bi bi-dash"></i>
-                    </button>
-                    <input 
-                      type="number" 
-                      className="form-control text-center" 
-                      value={item.cantidad}
-                      onChange={(e) => handleCantidadChange(item.id, e.target.value)}
-                      min="1"
-                    />
-                    <button 
-                      className="btn btn-outline-secondary" 
-                      type="button"
-                      onClick={() => handleCantidadChange(item.id, item.cantidad + 1)}
-                    >
-                      <i className="bi bi-plus"></i>
-                    </button>
-                  </div>
-                </td>
-                <td className="fw-bold">${(item.precio * item.cantidad).toLocaleString()}</td>
-                <td>
-                  <button 
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={() => handleRemoverProducto(item.id, item.nombre)}
-                  >
-                    <i className="bi bi-trash"></i>
-                  </button>
-                </td>
+      
+      {/* Vista para dispositivos medianos y grandes */}
+      <div className="d-none d-md-block">
+        <div className="table-responsive">
+          <table className="table align-middle">
+            <thead>
+              <tr>
+                <th scope="col">Producto</th>
+                <th scope="col">Precio</th>
+                <th scope="col">Cantidad</th>
+                <th scope="col">Subtotal</th>
+                <th scope="col">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan="3" className="text-end fw-bold">Total:</td>
-              <td className="fw-bold fs-5">${precioTotal.toLocaleString()}</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
+            </thead>
+            <tbody>
+              {carrito.map(item => (
+                <tr key={item.id}>
+                  <td>
+                    <div className="d-flex align-items-center">
+                      <img 
+                        src={item.imagen} 
+                        alt={item.nombre} 
+                        style={{ width: '60px', height: '60px', objectFit: 'contain' }}
+                        className="me-3"
+                      />
+                      <div>
+                        <h6 className="mb-0">{item.nombre}</h6>
+                        <small className="text-muted">{item.marca}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>${item.precio.toLocaleString()}</td>
+                  <td style={{ width: '150px' }}>
+                    <div className="input-group">
+                      <button 
+                        className="btn btn-outline-secondary" 
+                        type="button"
+                        onClick={() => handleCantidadChange(item.id, item.cantidad - 1)}
+                      >
+                        <i className="bi bi-dash"></i>
+                      </button>
+                      <input 
+                        type="number" 
+                        className="form-control text-center" 
+                        value={item.cantidad}
+                        onChange={(e) => handleCantidadChange(item.id, e.target.value)}
+                        min="1"
+                      />
+                      <button 
+                        className="btn btn-outline-secondary" 
+                        type="button"
+                        onClick={() => handleCantidadChange(item.id, item.cantidad + 1)}
+                      >
+                        <i className="bi bi-plus"></i>
+                      </button>
+                    </div>
+                  </td>
+                  <td className="fw-bold">${(item.precio * item.cantidad).toLocaleString()}</td>
+                  <td>
+                    <button 
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => handleRemoverProducto(item.id, item.nombre)}
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan="3" className="text-end fw-bold">Total:</td>
+                <td className="fw-bold fs-5">${precioTotal.toLocaleString()}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
       
-      <div className="d-flex justify-content-between mt-4">
+      {/* Vista para dispositivos móviles */}
+      <div className="d-md-none">
+        {carrito.map(item => (
+          <div key={item.id} className="card mb-3 border-light shadow-sm">
+            <div className="card-body">
+              <div className="d-flex mb-3">
+                <img 
+                  src={item.imagen} 
+                  alt={item.nombre} 
+                  style={{ width: '80px', height: '80px', objectFit: 'contain' }}
+                  className="me-3"
+                />
+                <div>
+                  <h5 className="card-title mb-1">{item.nombre}</h5>
+                  <p className="text-muted small mb-1">{item.marca}</p>
+                  <p className="mb-0 fw-bold">${item.precio.toLocaleString()}</p>
+                </div>
+              </div>
+              
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <span>Cantidad:</span>
+                <div className="input-group" style={{ width: '130px' }}>
+                  <button 
+                    className="btn btn-sm btn-outline-secondary" 
+                    type="button"
+                    onClick={() => handleCantidadChange(item.id, item.cantidad - 1)}
+                  >
+                    <i className="bi bi-dash"></i>
+                  </button>
+                  <input 
+                    type="number" 
+                    className="form-control form-control-sm text-center" 
+                    value={item.cantidad}
+                    onChange={(e) => handleCantidadChange(item.id, e.target.value)}
+                    min="1"
+                  />
+                  <button 
+                    className="btn btn-sm btn-outline-secondary" 
+                    type="button"
+                    onClick={() => handleCantidadChange(item.id, item.cantidad + 1)}
+                  >
+                    <i className="bi bi-plus"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="d-flex justify-content-between align-items-center">
+                <span className="fw-bold">Subtotal: ${(item.precio * item.cantidad).toLocaleString()}</span>
+                <button 
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => handleRemoverProducto(item.id, item.nombre)}
+                >
+                  <i className="bi bi-trash"></i> Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        
+        <div className="card mb-3 border-light shadow">
+          <div className="card-body">
+            <h5 className="card-title text-end mb-0">Total: <span className="fs-4 fw-bold">${precioTotal.toLocaleString()}</span></h5>
+          </div>
+        </div>
+      </div>
+      
+      <div className="d-flex flex-column flex-md-row justify-content-between mt-4 gap-2">
         <button 
           className="btn btn-outline-danger"
           onClick={handleVaciarCarrito}

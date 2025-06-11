@@ -10,8 +10,8 @@ const Layout = () => {
     <CarritoProvider>
       <div className="d-flex flex-column min-vh-100">
         <Navbar />
-        <main className="flex-grow-1 py-4" style={{ paddingTop: '80px' }}>
-          <div className="container">
+        <main className="flex-grow-1" style={{ paddingTop: '80px', marginTop: '10px' }}>
+          <div className="container mt-4 mt-lg-5">
             <Outlet />
           </div>
         </main>

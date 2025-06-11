@@ -92,8 +92,53 @@ const Navbar = () => {
                 Contacto
               </Link>
             </li>
+            {/* Agregamos los enlaces del carrito y admin para móviles */}
+            <li className="nav-item d-lg-none">
+              <Link 
+                to="/carrito" 
+                className="nav-link d-flex align-items-center" 
+                style={isActive('/carrito') ? activeStyle : defaultStyle}
+              >
+                <i className="bi bi-cart me-1"></i> Carrito
+                {cantidadTotal > 0 && (
+                  <span className="badge rounded-pill bg-danger ms-1">
+                    {cantidadTotal}
+                  </span>
+                )}
+              </Link>
+            </li>
+            <li className="nav-item d-lg-none">
+              {isAdmin ? (
+                <>
+                  <Link 
+                    to="/admin/dashboard" 
+                    className="nav-link" 
+                    style={isActive('/admin') ? activeStyle : defaultStyle}
+                  >
+                    Panel Admin
+                  </Link>
+                  <Link 
+                    to="/" 
+                    onClick={logout} 
+                    className="nav-link" 
+                    style={{ color: "#dc3545", fontWeight: "bold" }}
+                  >
+                    Cerrar Sesión
+                  </Link>
+                </>
+              ) : (
+                <Link 
+                  to="/login" 
+                  className="nav-link" 
+                  style={isActive('/login') ? activeStyle : defaultStyle}
+                >
+                  Admin
+                </Link>
+              )}
+            </li>
           </ul>
-          <div className="d-flex align-items-center">
+          {/* Botones visibles solo en pantallas más grandes */}
+          <div className="d-none d-lg-flex align-items-center">
             <Link 
               to="/carrito" 
               className="btn position-relative me-3" 
