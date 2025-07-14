@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthContexto } from '../../contexto/AuthContexto';
-import { obtenerProductos } from '../../servicios/productoServicio';
+import { obtenerProductos, crearProducto, actualizarProducto, eliminarProducto as eliminarProductoApi } from '../../servicios/productoServicio';
 import Swal from 'sweetalert2';
 
 const Dashboard = () => {
@@ -9,7 +9,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [guardando, setGuardando] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [modoEdicion, setModoEdicion] = useState(false);
   const [nuevoProducto, setNuevoProducto] = useState({
     nombre: '',
     marca: '',
@@ -17,6 +19,7 @@ const Dashboard = () => {
     precio: '',
     imagen: ''
   });
+  const [errores, setErrores] = useState({});
 
   useEffect(() => {
     // Redirigir si no es admin
@@ -25,26 +28,26 @@ const Dashboard = () => {
       return;
     }
 
-    const cargarProductos = async () => {
-      try {
-        setCargando(true);
-        const data = await obtenerProductos();
-        setProductos(data);
-      } catch (error) {
-        console.error('Error al cargar productos:', error);
-        Swal.fire({
-          title: 'Error',
-          text: 'No se pudo cargar la lista de productos',
-          icon: 'error',
-          confirmButtonColor: '#FF69B4'
-        });
-      } finally {
-        setCargando(false);
-      }
-    };
-
     cargarProductos();
   }, [isAdmin, navigate]);
+
+  const cargarProductos = async () => {
+    try {
+      setCargando(true);
+      const data = await obtenerProductos();
+      setProductos(data);
+    } catch (error) {
+      console.error('Error al cargar productos:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo cargar la lista de productos',
+        icon: 'error',
+        confirmButtonColor: '#FF69B4'
+      });
+    } finally {
+      setCargando(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -57,39 +60,143 @@ const Dashboard = () => {
       ...nuevoProducto,
       [name]: value
     });
+    
+    // Limpiar errores cuando el usuario corrige
+    if (errores[name]) {
+      setErrores({
+        ...errores,
+        [name]: null
+      });
+    }
   };
 
-  const handleSubmit = (e) => {
+  const validarFormulario = () => {
+    const erroresValidacion = {};
+    
+    if (!nuevoProducto.nombre.trim()) {
+      erroresValidacion.nombre = 'El nombre es obligatorio';
+    }
+    
+    if (!nuevoProducto.marca.trim()) {
+      erroresValidacion.marca = 'La marca es obligatoria';
+    }
+    
+    if (!nuevoProducto.descripcion.trim()) {
+      erroresValidacion.descripcion = 'La descripción es obligatoria';
+    } else if (nuevoProducto.descripcion.length < 10) {
+      erroresValidacion.descripcion = 'La descripción debe tener al menos 10 caracteres';
+    }
+    
+    if (!nuevoProducto.precio) {
+      erroresValidacion.precio = 'El precio es obligatorio';
+    } else if (parseFloat(nuevoProducto.precio) <= 0) {
+      erroresValidacion.precio = 'El precio debe ser mayor a 0';
+    }
+    
+    if (!nuevoProducto.imagen.trim()) {
+      erroresValidacion.imagen = 'La URL de la imagen es obligatoria';
+    } else if (!esUrlValida(nuevoProducto.imagen)) {
+      erroresValidacion.imagen = 'Debe ser una URL válida';
+    }
+    
+    setErrores(erroresValidacion);
+    return Object.keys(erroresValidacion).length === 0;
+  };
+  
+  const esUrlValida = (url) => {
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Simulamos agregar un producto (no hay backend real)
-    const nuevoId = Math.max(...productos.map(p => parseInt(p.id))) + 1;
-    const productoCreado = {
-      ...nuevoProducto,
-      id: nuevoId.toString(),
-      precio: parseFloat(nuevoProducto.precio)
-    };
+    if (!validarFormulario()) {
+      return;
+    }
     
-    setProductos([...productos, productoCreado]);
-    setNuevoProducto({
-      nombre: '',
-      marca: '',
-      descripcion: '',
-      precio: '',
-      imagen: ''
-    });
-    setMostrarFormulario(false);
+    setGuardando(true);
     
-    // Mostrar alerta de éxito con SweetAlert2
-    Swal.fire({
-      title: '¡Producto agregado!',
-      text: `${productoCreado.nombre} ha sido agregado correctamente`,
-      icon: 'success',
-      confirmButtonColor: '#FF69B4'
-    });
+    try {
+      const productoParaEnviar = {
+        ...nuevoProducto,
+        precio: parseFloat(nuevoProducto.precio)
+      };
+      
+      let productoGuardado;
+      
+      if (modoEdicion) {
+        productoGuardado = await actualizarProducto(nuevoProducto.id, productoParaEnviar);
+        
+        // Actualizar la lista de productos
+        setProductos(productos.map(p => 
+          p.id === productoGuardado.id ? productoGuardado : p
+        ));
+        
+        Swal.fire({
+          title: '¡Producto actualizado!',
+          text: `${productoGuardado.nombre} ha sido actualizado correctamente`,
+          icon: 'success',
+          confirmButtonColor: '#FF69B4'
+        });
+      } else {
+        productoGuardado = await crearProducto(productoParaEnviar);
+        
+        // Agregar el nuevo producto a la lista
+        setProductos([...productos, productoGuardado]);
+        
+        Swal.fire({
+          title: '¡Producto agregado!',
+          text: `${productoGuardado.nombre} ha sido agregado correctamente`,
+          icon: 'success',
+          confirmButtonColor: '#FF69B4'
+        });
+      }
+      
+      // Resetear el formulario
+      setNuevoProducto({
+        nombre: '',
+        marca: '',
+        descripcion: '',
+        precio: '',
+        imagen: ''
+      });
+      setModoEdicion(false);
+      setMostrarFormulario(false);
+    } catch (error) {
+      console.error('Error al guardar producto:', error);
+      Swal.fire({
+        title: 'Error',
+        text: modoEdicion 
+          ? 'No se pudo actualizar el producto'
+          : 'No se pudo crear el producto',
+        icon: 'error',
+        confirmButtonColor: '#FF69B4'
+      });
+    } finally {
+      setGuardando(false);
+    }
   };
 
-  const eliminarProducto = (id, nombre) => {
+  const editarProducto = (producto) => {
+    setNuevoProducto({
+      id: producto.id,
+      nombre: producto.nombre,
+      marca: producto.marca,
+      descripcion: producto.descripcion,
+      precio: producto.precio.toString(),
+      imagen: producto.imagen
+    });
+    setModoEdicion(true);
+    setMostrarFormulario(true);
+    setErrores({});
+  };
+
+  const eliminarProducto = async (id, nombre) => {
     // Confirmar con SweetAlert2
     Swal.fire({
       title: '¿Estás segura?',
@@ -100,18 +207,42 @@ const Dashboard = () => {
       cancelButtonColor: '#6c757d',
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setProductos(productos.filter(producto => producto.id !== id));
-        
-        Swal.fire({
-          title: 'Eliminado',
-          text: `El producto "${nombre}" ha sido eliminado`,
-          icon: 'success',
-          confirmButtonColor: '#FF69B4'
-        });
+        try {
+          await eliminarProductoApi(id);
+          setProductos(productos.filter(producto => producto.id !== id));
+          
+          Swal.fire({
+            title: 'Eliminado',
+            text: `El producto "${nombre}" ha sido eliminado`,
+            icon: 'success',
+            confirmButtonColor: '#FF69B4'
+          });
+        } catch (error) {
+          console.error('Error al eliminar producto:', error);
+          Swal.fire({
+            title: 'Error',
+            text: 'No se pudo eliminar el producto',
+            icon: 'error',
+            confirmButtonColor: '#FF69B4'
+          });
+        }
       }
     });
+  };
+
+  const cancelarEdicion = () => {
+    setNuevoProducto({
+      nombre: '',
+      marca: '',
+      descripcion: '',
+      precio: '',
+      imagen: ''
+    });
+    setModoEdicion(false);
+    setMostrarFormulario(false);
+    setErrores({});
   };
 
   if (cargando) {
@@ -136,82 +267,121 @@ const Dashboard = () => {
       <div className="card shadow mb-4">
         <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center" style={{ backgroundColor: "#FF69B4 !important" }}>
           <h5 className="m-0">Productos ({productos.length})</h5>
-          <button 
-            className="btn btn-sm btn-light" 
-            onClick={() => setMostrarFormulario(!mostrarFormulario)}
-          >
-            {mostrarFormulario ? 'Cancelar' : 'Agregar Producto'}
-          </button>
+          {!mostrarFormulario && (
+            <button 
+              className="btn btn-sm btn-light" 
+              onClick={() => setMostrarFormulario(true)}
+            >
+              Agregar Producto
+            </button>
+          )}
         </div>
         
         {mostrarFormulario && (
           <div className="card-body border-bottom" style={{ backgroundColor: "#FFF5F8" }}>
-            <h5 className="mb-3" style={{ color: "#FF69B4" }}>Nuevo Producto</h5>
+            <h5 className="mb-3" style={{ color: "#FF69B4" }}>
+              {modoEdicion ? 'Editar Producto' : 'Nuevo Producto'}
+            </h5>
             <form onSubmit={handleSubmit}>
               <div className="row">
                 <div className="col-md-6 mb-3">
                   <label className="form-label" style={{ color: "#FF69B4" }}>Nombre</label>
                   <input 
                     type="text" 
-                    className="form-control" 
+                    className={`form-control ${errores.nombre ? 'is-invalid' : ''}`}
                     name="nombre" 
                     value={nuevoProducto.nombre}
                     onChange={handleChange}
                     required
-                    style={{ borderColor: "#FFB6C1" }}
+                    style={{ borderColor: errores.nombre ? "#dc3545" : "#FFB6C1" }}
                   />
+                  {errores.nombre && (
+                    <div className="invalid-feedback">{errores.nombre}</div>
+                  )}
                 </div>
                 <div className="col-md-6 mb-3">
                   <label className="form-label" style={{ color: "#FF69B4" }}>Marca</label>
                   <input 
                     type="text" 
-                    className="form-control" 
+                    className={`form-control ${errores.marca ? 'is-invalid' : ''}`}
                     name="marca" 
                     value={nuevoProducto.marca}
                     onChange={handleChange}
                     required
-                    style={{ borderColor: "#FFB6C1" }}
+                    style={{ borderColor: errores.marca ? "#dc3545" : "#FFB6C1" }}
                   />
+                  {errores.marca && (
+                    <div className="invalid-feedback">{errores.marca}</div>
+                  )}
                 </div>
                 <div className="col-md-6 mb-3">
                   <label className="form-label" style={{ color: "#FF69B4" }}>Precio</label>
                   <input 
                     type="number" 
-                    className="form-control" 
+                    className={`form-control ${errores.precio ? 'is-invalid' : ''}`}
                     name="precio" 
                     value={nuevoProducto.precio}
                     onChange={handleChange}
                     required
-                    style={{ borderColor: "#FFB6C1" }}
+                    min="0.01"
+                    step="0.01"
+                    style={{ borderColor: errores.precio ? "#dc3545" : "#FFB6C1" }}
                   />
+                  {errores.precio && (
+                    <div className="invalid-feedback">{errores.precio}</div>
+                  )}
                 </div>
                 <div className="col-md-6 mb-3">
                   <label className="form-label" style={{ color: "#FF69B4" }}>URL de Imagen</label>
                   <input 
                     type="url" 
-                    className="form-control" 
+                    className={`form-control ${errores.imagen ? 'is-invalid' : ''}`}
                     name="imagen" 
                     value={nuevoProducto.imagen}
                     onChange={handleChange}
                     required
-                    style={{ borderColor: "#FFB6C1" }}
+                    style={{ borderColor: errores.imagen ? "#dc3545" : "#FFB6C1" }}
                   />
+                  {errores.imagen && (
+                    <div className="invalid-feedback">{errores.imagen}</div>
+                  )}
                 </div>
                 <div className="col-12 mb-3">
                   <label className="form-label" style={{ color: "#FF69B4" }}>Descripción</label>
                   <textarea 
-                    className="form-control" 
+                    className={`form-control ${errores.descripcion ? 'is-invalid' : ''}`}
                     name="descripcion" 
                     rows="3" 
                     value={nuevoProducto.descripcion}
                     onChange={handleChange}
                     required
-                    style={{ borderColor: "#FFB6C1" }}
+                    style={{ borderColor: errores.descripcion ? "#dc3545" : "#FFB6C1" }}
                   ></textarea>
+                  {errores.descripcion && (
+                    <div className="invalid-feedback">{errores.descripcion}</div>
+                  )}
                 </div>
-                <div className="col-12">
-                  <button type="submit" className="btn" style={{ backgroundColor: "#FF69B4", color: "white" }}>
-                    Guardar Producto
+                <div className="col-12 d-flex gap-2">
+                  <button 
+                    type="submit" 
+                    className="btn" 
+                    style={{ backgroundColor: "#FF69B4", color: "white" }}
+                    disabled={guardando}
+                  >
+                    {guardando ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Guardando...
+                      </>
+                    ) : modoEdicion ? 'Actualizar Producto' : 'Guardar Producto'}
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={cancelarEdicion}
+                    disabled={guardando}
+                  >
+                    Cancelar
                   </button>
                 </div>
               </div>
@@ -250,13 +420,20 @@ const Dashboard = () => {
                     </td>
                     <td>${producto.precio.toLocaleString()}</td>
                     <td>
-                      <button 
-                        className="btn btn-sm" 
-                        style={{ color: "#FF69B4" }}
-                        onClick={() => eliminarProducto(producto.id, producto.nombre)}
-                      >
-                        <i className="bi bi-trash"></i> Eliminar
-                      </button>
+                      <div className="d-flex gap-2">
+                        <button 
+                          className="btn btn-sm btn-outline-primary" 
+                          onClick={() => editarProducto(producto)}
+                        >
+                          <i className="bi bi-pencil"></i> Editar
+                        </button>
+                        <button 
+                          className="btn btn-sm btn-outline-danger" 
+                          onClick={() => eliminarProducto(producto.id, producto.nombre)}
+                        >
+                          <i className="bi bi-trash"></i> Eliminar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

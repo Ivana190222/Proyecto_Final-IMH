@@ -1,12 +1,36 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCarritoContexto } from '../contexto/CarritoContexto';
+import { useAuthContexto } from '../contexto/AuthContexto';
 import Swal from 'sweetalert2';
 
 const ProductoItem = ({ producto }) => {
   const { agregarAlCarrito } = useCarritoContexto();
+  const { isLoggedIn } = useAuthContexto();
+  const navigate = useNavigate();
   
   const handleAgregarAlCarrito = (e) => {
     e.preventDefault();
+    
+    // Verificar si el usuario está autenticado
+    if (!isLoggedIn) {
+      // Mostrar alerta y redirigir al login
+      Swal.fire({
+        title: 'Inicia sesión',
+        text: 'Debes iniciar sesión para agregar productos al carrito',
+        icon: 'info',
+        confirmButtonColor: '#FF69B4',
+        showCancelButton: true,
+        confirmButtonText: 'Iniciar sesión',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate('/login');
+        }
+      });
+      return;
+    }
+    
+    // Si está autenticado, agregar al carrito
     agregarAlCarrito(producto, 1);
     
     // Mostrar alerta con SweetAlert2

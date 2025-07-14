@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { obtenerProductoPorId } from '../servicios/productoServicio';
 import { useCarritoContexto } from '../contexto/CarritoContexto';
+import { useAuthContexto } from '../contexto/AuthContexto';
 import Swal from 'sweetalert2';
 
 const DetalleProducto = () => {
@@ -12,6 +13,7 @@ const DetalleProducto = () => {
   const [error, setError] = useState(null);
   const [cantidad, setCantidad] = useState(1);
   const { agregarAlCarrito } = useCarritoContexto();
+  const { isLoggedIn } = useAuthContexto();
 
   useEffect(() => {
     const cargarProducto = async () => {
@@ -32,6 +34,26 @@ const DetalleProducto = () => {
   }, [id]);
 
   const handleAgregarAlCarrito = () => {
+    // Verificar si el usuario está autenticado
+    if (!isLoggedIn) {
+      // Mostrar alerta y redirigir al login
+      Swal.fire({
+        title: 'Inicia sesión',
+        text: 'Debes iniciar sesión para agregar productos al carrito',
+        icon: 'info',
+        confirmButtonColor: '#FF69B4',
+        showCancelButton: true,
+        confirmButtonText: 'Iniciar sesión',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate('/login');
+        }
+      });
+      return;
+    }
+    
+    // Si está autenticado, agregar al carrito
     agregarAlCarrito(producto, cantidad);
     
     // Mostrar alerta con SweetAlert2

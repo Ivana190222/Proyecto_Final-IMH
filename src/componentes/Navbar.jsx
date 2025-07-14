@@ -5,7 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Navbar = () => {
   const { cantidadTotal } = useCarritoContexto();
-  const { isAdmin, logout } = useAuthContexto();
+  const { isAdmin, isLoggedIn, userData, logout } = useAuthContexto();
   const location = useLocation();
 
   // Función para determinar si un enlace está activo
@@ -108,15 +108,17 @@ const Navbar = () => {
               </Link>
             </li>
             <li className="nav-item d-lg-none">
-              {isAdmin ? (
+              {isLoggedIn ? (
                 <>
-                  <Link 
-                    to="/admin/dashboard" 
-                    className="nav-link" 
-                    style={isActive('/admin') ? activeStyle : defaultStyle}
-                  >
-                    Panel Admin
-                  </Link>
+                  {isAdmin && (
+                    <Link 
+                      to="/admin/dashboard" 
+                      className="nav-link" 
+                      style={isActive('/admin') ? activeStyle : defaultStyle}
+                    >
+                      Panel Admin
+                    </Link>
+                  )}
                   <Link 
                     to="/" 
                     onClick={logout} 
@@ -132,7 +134,7 @@ const Navbar = () => {
                   className="nav-link" 
                   style={isActive('/login') ? activeStyle : defaultStyle}
                 >
-                  Admin
+                  Iniciar Sesión
                 </Link>
               )}
             </li>
@@ -156,21 +158,35 @@ const Navbar = () => {
               )}
             </Link>
             
-            {isAdmin ? (
-              <div className="d-flex">
-                <Link 
-                  to="/admin/dashboard" 
-                  className="btn btn-sm me-2" 
-                  style={{ 
-                    backgroundColor: isActive('/admin') ? "#FF1493" : "#F8BBD0", 
-                    color: isActive('/admin') ? "white" : "#FF1493", 
-                    borderRadius: "25px" 
-                  }}
+            {isLoggedIn ? (
+              <div className="d-flex align-items-center">
+                {userData && (
+                  <div className="me-3 text-end">
+                    <div style={{ fontWeight: 'bold', color: '#FF69B4' }}>¡Hola, {userData.nombre}!</div>
+                    <div className="small text-muted">{userData.email}</div>
+                  </div>
+                )}
+                
+                {isAdmin && (
+                  <Link 
+                    to="/admin/dashboard" 
+                    className="btn btn-sm me-2" 
+                    style={{ 
+                      backgroundColor: isActive('/admin') ? "#FF1493" : "#F8BBD0", 
+                      color: isActive('/admin') ? "white" : "#FF1493", 
+                      borderRadius: "25px" 
+                    }}
+                  >
+                    Panel Admin
+                  </Link>
+                )}
+                
+                <button 
+                  onClick={logout} 
+                  className="btn btn-sm btn-danger" 
+                  style={{ borderRadius: "25px" }}
                 >
-                  Panel
-                </Link>
-                <button onClick={logout} className="btn btn-sm btn-danger" style={{ borderRadius: "25px" }}>
-                  Salir
+                  Cerrar Sesión
                 </button>
               </div>
             ) : (
@@ -183,7 +199,7 @@ const Navbar = () => {
                   borderRadius: "25px" 
                 }}
               >
-                Admin
+                Iniciar Sesión
               </Link>
             )}
           </div>
